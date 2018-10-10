@@ -1,0 +1,66 @@
+#!/usr/bin/env bash
+
+shopt -s nullglob globstar
+
+function clip() {
+  echo "$@" | xclip -selection clipboard
+}
+
+typeit=0
+if [[ $1 == "--type" ]]; then
+	typeit=1
+	shift
+fi
+
+prefix=${PASSWORD_STORE_DIR-~/.password-store}
+password_files=( "$prefix"/**/*.gpg )
+password_files=( "${password_files[@]#"$prefix"/}" )
+password_files=( "${password_files[@]%.gpg}" )
+password_list=$(echo ${password_files[@]})
+
+sorted_password_files_path=$HOME/.config/passmenu/sorting
+if [ ! -f $sorted_password_files_path ]; then
+  echo "Creating passmenu sorting cache"
+  mkdir -p $(dirname $sorted_password_files_path)
+  echo $password_list > $sorted_password_files_path;
+fi
+
+# If the sorted lines of both files changed, it probably means that the
+# passwords have been updated/manipulated. We need to compare against the cache
+# without the first line, since its extra added for the quick access.
+sorted_password_files=$(cat $sorted_password_files_path)
+sorted_password_cache=$(tail -n +2 $sorted_password_files_path)
+if [ "$password_list" != "$sorted_password_cache" ]; then
+  sorted_password_files=$password_list
+fi
+
+password=$(echo $sorted_password_files | xargs -n 1 | dmenu "$@")
+[[ -n $password ]] || exit
+
+# When a password file has been selected, put it to the top of the list for
+# faster reselection next time
+echo $password > $sorted_password_files_path
+echo $password_list >> $sorted_password_files_path
+
+text="Copy [u]sername\nCopy pass[w]ord\nCopy O[T]P"
+action=$(echo -e "$text" | dmenu -i -p "$password")
+
+case $action in
+"Copy [u]sername")
+  login=$(echo $password | cut -d/ -f2)
+  clip $login
+  ;;
+"Copy pass[w]ord")
+  password=$(pass show $password | head -n 1)
+  clip $password
+  ;;
+"Copy O[T]P")
+  code=$(pass otp code $password)
+  clip $code
+  ;;
+*)
+  exit
+  ;;
+esac
+
+exit
