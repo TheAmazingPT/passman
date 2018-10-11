@@ -2,48 +2,46 @@
 
 shopt -s nullglob globstar
 
-function clip() {
-  echo "$@" | xclip -selection clipboard
-}
+source ./src/clip.sh
+source ./src/get-password-list.sh
+source ./src/check-cache-file.sh
+source ./src/select-password.sh
+#source ./src/select-password-action.sh
 
-typeit=0
-if [[ $1 == "--type" ]]; then
-	typeit=1
-	shift
-fi
+password_list="$(get_password_list)"
 
-prefix=${PASSWORD_STORE_DIR-~/.password-store}
-password_files=( "$prefix"/**/*.gpg )
-password_files=( "${password_files[@]#"$prefix"/}" )
-password_files=( "${password_files[@]%.gpg}" )
-password_list=$(echo ${password_files[@]})
+cache_file_path=$HOME/.cache/passman/cache
+check_cache_file "$cache_file_path"
 
-sorted_password_files_path=$HOME/.config/passmenu/sorting
-if [ ! -f $sorted_password_files_path ]; then
-  echo "Creating passmenu sorting cache"
-  mkdir -p $(dirname $sorted_password_files_path)
-  echo $password_list > $sorted_password_files_path;
-fi
-
-# If the sorted lines of both files changed, it probably means that the
-# passwords have been updated/manipulated. We need to compare against the cache
-# without the first line, since its extra added for the quick access.
-sorted_password_files=$(cat $sorted_password_files_path)
-sorted_password_cache=$(tail -n +2 $sorted_password_files_path)
-if [ "$password_list" != "$sorted_password_cache" ]; then
-  sorted_password_files=$password_list
-fi
-
-password=$(echo $sorted_password_files | xargs -n 1 | dmenu "$@")
+last_password=$(cat $cache_file_path)
+menu="\"[Repeat: $last_password]\" \"Add Password\" \"Generate Password\""
+selection="$menu $password_list"
+prompt="Passman: search and select!"
+password=$(echo $selection | xargs -n 1 | dmenu -i -p "$prompt")
 [[ -n $password ]] || exit
 
-# When a password file has been selected, put it to the top of the list for
-# faster reselection next time
-echo $password > $sorted_password_files_path
-echo $password_list >> $sorted_password_files_path
+# Decide if a new password shall be created, generated or an existing shall be
+# copied to clipboard.
+case $password in
+  "[Repeat: $last_password]")
+    password=$last_password
+    ;;
+  "Add Password")
+    echo ok
+    exit
+    ;;
+  "Generate Password")
+    clip $(head -c 512 /dev/urandom | sha512sum | base64 | head -c 32)
+    exit
+    ;;
+esac
 
-text="Copy [u]sername\nCopy pass[w]ord\nCopy O[T]P"
-action=$(echo -e "$text" | dmenu -i -p "$password")
+# When a password has been selected, put it to the top of the list for
+# faster reselection next time
+echo $password > $cache_file_path
+
+menu="\"Copy [u]sername\" \"Copy pass[w]ord\" \"Copy O[T]P\""
+action=$(echo "$menu" | xargs -n 1 | dmenu -i -p "$password")
 
 case $action in
 "Copy [u]sername")
