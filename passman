@@ -1,64 +1,39 @@
 #!/usr/bin/env bash
 
+# This tools has a few dependencies:
+#   pass
+#   xclip
+#   notify-send (libnotify)
+
 shopt -s nullglob globstar
 
+source ./src/notification.sh
 source ./src/clip.sh
 source ./src/get-password-list.sh
 source ./src/check-cache-file.sh
+source ./src/add-password.sh
+source ./src/generate-password.sh
 source ./src/select-password.sh
-#source ./src/select-password-action.sh
+source ./src/select-password-action.sh
 
 password_list="$(get_password_list)"
 
 cache_file_path=$HOME/.cache/passman/cache
-check_cache_file "$cache_file_path"
+check_cache_file $cache_file_path
 
-last_password=$(cat $cache_file_path)
-menu="\"[Repeat: $last_password]\" \"Add Password\" \"Generate Password\""
-selection="$menu $password_list"
-prompt="Passman: search and select!"
-password=$(echo $selection | xargs -n 1 | dmenu -i -p "$prompt")
-[[ -n $password ]] || exit
+last_password="$(cat $cache_file_path)"
+password=$(select_password "$last_password" "$password_list")
 
-# Decide if a new password shall be created, generated or an existing shall be
-# copied to clipboard.
-case $password in
-  "[Repeat: $last_password]")
-    password=$last_password
-    ;;
-  "Add Password")
-    echo ok
-    exit
-    ;;
-  "Generate Password")
-    clip $(head -c 512 /dev/urandom | sha512sum | base64 | head -c 32)
-    exit
-    ;;
-esac
+# There is nothing left to do, if user didn't select an option
+if [[ -z $password ]]; then
+  exit
+fi
 
 # When a password has been selected, put it to the top of the list for
 # faster reselection next time
 echo $password > $cache_file_path
 
-menu="\"Copy [u]sername\" \"Copy pass[w]ord\" \"Copy O[T]P\""
-action=$(echo "$menu" | xargs -n 1 | dmenu -i -p "$password")
-
-case $action in
-"Copy [u]sername")
-  login=$(echo $password | cut -d/ -f2)
-  clip $login
-  ;;
-"Copy pass[w]ord")
-  password=$(pass show $password | head -n 1)
-  clip $password
-  ;;
-"Copy O[T]P")
-  code=$(pass otp code $password)
-  clip $code
-  ;;
-*)
-  exit
-  ;;
-esac
+# Select the account for the selected password
+select_password_action $password
 
 exit
