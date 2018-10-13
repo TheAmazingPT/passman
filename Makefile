@@ -1,7 +1,7 @@
 SHELL := /usr/bin/env bash
 
 check:
-	shellcheck -x passman
+	shellcheck -x src/passman
 
 check-dist:
 	shellcheck -x dist/passman

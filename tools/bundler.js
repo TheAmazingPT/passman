@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const mainFilePath = path.resolve(__dirname, '../passman');
+const mainFilePath = path.resolve(__dirname, '../src/passman');
 const newFilePath = path.resolve(__dirname, '../dist/passman');
 
 console.log('Starting to parse', mainFilePath);

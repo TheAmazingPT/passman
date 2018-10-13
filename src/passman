@@ -1,24 +1,26 @@
 #!/usr/bin/env bash
 
-# This tools has a few dependencies:
+# Dependencies for general usage
 #   pass
+#   xclip
+#   notify-send (libnotify)
+
+# Additional dependencies for development
 #   node
 #   make
-#   xclip
-#   "shellcheck
-#   notify-send (libnotify)
+#   Shellcheck
 
 shopt -s nullglob globstar
 
-source ./src/notification.bash
-source ./src/clip.bash
-source ./src/check-dependencies.bash
-source ./src/get-password-list.bash
-source ./src/check-cache-file.bash
-source ./src/add-password.bash
-source ./src/generate-password.bash
-source ./src/select-password.bash
-source ./src/select-password-action.bash
+source ./notification.bash
+source ./clip.bash
+source ./check-dependencies.bash
+source ./get-password-list.bash
+source ./check-cache-file.bash
+source ./add-password.bash
+source ./generate-password.bash
+source ./select-password.bash
+source ./select-password-action.bash
 
 function main {
   local password_list cache_file_path last_password password
