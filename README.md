@@ -6,7 +6,8 @@ TBD
 
 # Setup
 Grab the executable [bash script](https://github.com/TheAmazingPT/passman/blob/master/dist/passman)
-from the dist directory and put it somewhere in your `$PATH`.
+from the [dist/](https://github.com/TheAmazingPT/passman/tree/master/dist) directory and put it somewhere in your `$PATH` on your computer.
+
 I for example added `$HOME/bin` to my `$PATH` and copied the script into this directory.
 
 Afterwards you want to invoke this script preferably via a keyboard shortcut.
