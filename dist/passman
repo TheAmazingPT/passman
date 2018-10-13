@@ -2,14 +2,19 @@
 
 # This tools has a few dependencies:
 #   pass
+#   node
+#   make
 #   xclip
+#   "shellcheck
 #   notify-send (libnotify)
 
 shopt -s nullglob globstar
 
 function notification {
-  local title=$1
-  local description=$2
+  local title description
+
+  title=$1
+  description=$2
 
   notify-send -u low -t 15000 "$title" "$description"
 }
@@ -19,57 +24,54 @@ function clip {
 }
 
 function get_password_list {
-  typeit=0
-
-  if [[ $1 == "--type" ]]; then
-    typeit=1
-    shift
-  fi
+  local prefix password_files
 
   prefix=${PASSWORD_STORE_DIR-~/.password-store}
+
   password_files=( "$prefix"/**/*.gpg )
   password_files=( "${password_files[@]#"$prefix"/}" )
   password_files=( "${password_files[@]%.gpg}" )
 
-  #echo ${password_files[@]}
-
-  printf -v list "%s " "${password_files[@]}"
-  echo $list
+  echo "${password_files[@]}"
 }
 
 function check_cache_file {
+  local file_path
+
   file_path="$1"
 
-  if [ ! -f $file_path ]; then
+  if [ ! -f "$file_path" ]; then
     echo "Creating passman cache"
-    mkdir -p $(dirname $file_path)
-    touch $file_path;
+    mkdir -p "$(dirname "$file_path")"
+    touch "$file_path";
   fi
 }
 
 function add_password {
-  local prompt="Enter Accountname:"
-  local account_name=$(echo | dmenu -i -p "$prompt")
+  local prompt account_name password_1 password_2
 
-  if [[ -z $account_name ]]; then
+  prompt="Enter Accountname: (service/username)"
+  account_name=$(echo | dmenu -i -p "$prompt")
+
+  if [[ -z "$account_name" ]]; then
     exit
   fi
 
-  local prompt="Enter Password:"
-  local password_1=$(echo | dmenu -i -p "$prompt")
+  prompt="Enter Password:"
+  password_1=$(echo | dmenu -i -p "$prompt")
 
-  if [[ -z $password_1 ]]; then
+  if [[ -z "$password_1" ]]; then
     exit
   fi
 
-  local prompt="Enter Password again:"
-  local password_2=$(echo | dmenu -i -p "$prompt")
+  prompt="Enter Password again:"
+  password_2=$(echo | dmenu -i -p "$prompt")
 
-  if [[ -z $password_2 ]]; then
+  if [[ -z "$password_2" ]]; then
     exit
   fi
 
-  if [[ $password_1 == $password_2 ]]; then
+  if [[ "$password_1" == "$password_2" ]]; then
     echo "$password_1" | pass insert --echo "$account_name" 1>/dev/null
     notification "New password was created!" "$account_name"
   else
@@ -78,25 +80,33 @@ function add_password {
 }
 
 function generate_password {
-  local default_length=32
-  local length=${1:-$default_length}
+  local default_length length generated_password trimmed_password
 
-  local generated_password=$(head -c 512 /dev/urandom | sha512sum | base64)
-  local trimmed_password=$(echo $generated_password | head -c $length)
+  default_length=32
+  length=${1:-$default_length}
+
+  generated_password="$(head -c 512 /dev/urandom | sha512sum | base64)"
+  trimmed_password="$(echo "$generated_password" | head -c "$length")"
 
   clip "$trimmed_password"
-  notification "New password generated!" "$trimmed_password" 1>/dev/null
+  notification "New password generated!" 1>/dev/null
 }
 
 function select_password {
-  local last_password=$1
-  local password_list=$2
+  local last_password password_list menu prompt new_password
 
-  local menu="\"[Repeat: $last_password]\" \"Add Password\" \"Generate Password\""
-  local selection="$menu $password_list"
+  last_password=$1
+  password_list=$2
 
-  local prompt="Passman: search and select!"
-  local new_password=$(echo $selection | xargs -n 1 | dmenu -i -p "$prompt")
+  menu=(
+    "\"[Repeat: $last_password]\""
+    "\"Add Password\""
+    "\"Generate Password\""
+    "${password_list[@]}"
+  )
+
+  prompt="Passman: search and select!"
+  new_password=$(echo "${menu[@]}" | xargs -n 1 | dmenu -i -p "$prompt")
 
   # There is nothing left to do, if user didn't select an option
   if [[ -z $new_password ]]; then
@@ -111,67 +121,83 @@ function select_password {
       exit
       ;;
     "Generate Password")
-      generate_password
+      generate_password 32
       exit
       ;;
     "[Repeat: $last_password]")
-      echo $last_password
+      echo "$last_password"
       ;;
     *)
-      echo $new_password
+      echo "$new_password"
       ;;
   esac
 }
 
 function select_password_action {
+  local account menu action user password code
+
   # Exit the program if no account has been given to this function
   if [[ -z $1 ]]; then
     exit 1
   else
-    local account=$1
+    account=$1
   fi
 
-  menu="\"Copy [u]sername\" \"Copy pass[w]ord\" \"Copy O[T]P\""
-  action=$(echo "$menu" | xargs -n 1 | dmenu -i -p "$account")
+  menu=(
+    "\"Copy [u]sername\""
+    "\"Copy pass[w]ord\""
+    "\"Copy O[T]P\""
+  )
+
+  action=$(echo "${menu[@]}" | xargs -n 1 | dmenu -i -p "$account")
 
   case $action in
+
     "Copy [u]sername")
-      local user=$(echo $account | cut -d/ -f2)
-      clip $user
+      user="$(echo "$account" | cut -d/ -f2)"
+      clip "$user"
       notification "Username copied!"
       ;;
+
     "Copy pass[w]ord")
-      local password=$(pass show $account | head -n 1)
-      clip $password
+      password=$(pass show "$account" | head -n 1)
+      clip "$password"
       notification "Password copied!"
       ;;
+
     "Copy O[T]P")
-      local code=$(pass otp code $account)
-      clip $code
+      code=$(pass otp code "$account")
+      clip "$code"
       notification "One Time Password copied!"
       ;;
+
   esac
 }
 
 
-password_list="$(get_password_list)"
+function main {
+  local password_list cache_file_path last_password password
 
-cache_file_path=$HOME/.cache/passman/cache
-check_cache_file $cache_file_path
+  password_list="$(get_password_list)"
 
-last_password="$(cat $cache_file_path)"
-password=$(select_password "$last_password" "$password_list")
+  cache_file_path=$HOME/.cache/passman/cache
+  check_cache_file "$cache_file_path"
 
-# There is nothing left to do, if user didn't select an option
-if [[ -z $password ]]; then
-  exit
-fi
+  last_password="$(cat "$cache_file_path")"
+  password=$(select_password "$last_password" "$password_list")
 
-# When a password has been selected, put it to the top of the list for
-# faster reselection next time
-echo $password > $cache_file_path
+  # There is nothing left to do, if user didn't select an option
+  if [[ -z $password ]]; then
+    exit
+  fi
 
-# Select the account for the selected password
-select_password_action $password
+  # When a password has been selected, put it to the top of the list for
+  # faster reselection next time
+  echo "$password" > "$cache_file_path"
 
+  # Select the account for the selected password
+  select_password_action "$password"
+}
+
+main
 exit

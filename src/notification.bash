@@ -1,6 +1,8 @@
 function notification {
-  local title=$1
-  local description=$2
+  local title description
+
+  title=$1
+  description=$2
 
   notify-send -u low -t 15000 "$title" "$description"
 }

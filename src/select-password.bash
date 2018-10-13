@@ -1,12 +1,18 @@
 function select_password {
-  local last_password=$1
-  local password_list=$2
+  local last_password password_list menu prompt new_password
 
-  local menu="\"[Repeat: $last_password]\" \"Add Password\" \"Generate Password\""
-  local selection="$menu $password_list"
+  last_password=$1
+  password_list=$2
 
-  local prompt="Passman: search and select!"
-  local new_password=$(echo $selection | xargs -n 1 | dmenu -i -p "$prompt")
+  menu=(
+    "\"[Repeat: $last_password]\""
+    "\"Add Password\""
+    "\"Generate Password\""
+    "${password_list[@]}"
+  )
+
+  prompt="Passman: search and select!"
+  new_password=$(echo "${menu[@]}" | xargs -n 1 | dmenu -i -p "$prompt")
 
   # There is nothing left to do, if user didn't select an option
   if [[ -z $new_password ]]; then
@@ -21,14 +27,14 @@ function select_password {
       exit
       ;;
     "Generate Password")
-      generate_password
+      generate_password 32
       exit
       ;;
     "[Repeat: $last_password]")
-      echo $last_password
+      echo "$last_password"
       ;;
     *)
-      echo $new_password
+      echo "$new_password"
       ;;
   esac
 }

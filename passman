@@ -2,38 +2,46 @@
 
 # This tools has a few dependencies:
 #   pass
+#   node
+#   make
 #   xclip
+#   "shellcheck
 #   notify-send (libnotify)
 
 shopt -s nullglob globstar
 
-source ./src/notification.sh
-source ./src/clip.sh
-source ./src/get-password-list.sh
-source ./src/check-cache-file.sh
-source ./src/add-password.sh
-source ./src/generate-password.sh
-source ./src/select-password.sh
-source ./src/select-password-action.sh
+source ./src/notification.bash
+source ./src/clip.bash
+source ./src/get-password-list.bash
+source ./src/check-cache-file.bash
+source ./src/add-password.bash
+source ./src/generate-password.bash
+source ./src/select-password.bash
+source ./src/select-password-action.bash
 
-password_list="$(get_password_list)"
+function main {
+  local password_list cache_file_path last_password password
 
-cache_file_path=$HOME/.cache/passman/cache
-check_cache_file $cache_file_path
+  password_list="$(get_password_list)"
 
-last_password="$(cat $cache_file_path)"
-password=$(select_password "$last_password" "$password_list")
+  cache_file_path=$HOME/.cache/passman/cache
+  check_cache_file "$cache_file_path"
 
-# There is nothing left to do, if user didn't select an option
-if [[ -z $password ]]; then
-  exit
-fi
+  last_password="$(cat "$cache_file_path")"
+  password=$(select_password "$last_password" "$password_list")
 
-# When a password has been selected, put it to the top of the list for
-# faster reselection next time
-echo $password > $cache_file_path
+  # There is nothing left to do, if user didn't select an option
+  if [[ -z $password ]]; then
+    exit
+  fi
 
-# Select the account for the selected password
-select_password_action $password
+  # When a password has been selected, put it to the top of the list for
+  # faster reselection next time
+  echo "$password" > "$cache_file_path"
 
+  # Select the account for the selected password
+  select_password_action "$password"
+}
+
+main
 exit
