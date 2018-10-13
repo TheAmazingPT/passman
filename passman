@@ -12,6 +12,7 @@ shopt -s nullglob globstar
 
 source ./src/notification.bash
 source ./src/clip.bash
+source ./src/check-dependencies.bash
 source ./src/get-password-list.bash
 source ./src/check-cache-file.bash
 source ./src/add-password.bash
@@ -21,6 +22,8 @@ source ./src/select-password-action.bash
 
 function main {
   local password_list cache_file_path last_password password
+
+  check_dependencies
 
   password_list="$(get_password_list)"
 
