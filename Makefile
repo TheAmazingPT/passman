@@ -1,10 +1,10 @@
 SHELL := /usr/bin/env bash
 
 check:
-	shellcheck -x src/passman
+	cd src/ && shellcheck -ax passman
 
 check-dist:
-	shellcheck -x dist/passman
+	shellcheck dist/passman
 
 clean:
 	[[ ! -d dist ]] || rm -r dist && mkdir -p dist

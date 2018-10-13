@@ -1,7 +1,9 @@
 const fs = require('fs');
 const path = require('path');
 
-const mainFilePath = path.resolve(__dirname, '../src/passman');
+const sourceDirectoryPath = path.resolve(__dirname, '../src');
+const mainFilePath = path.resolve(sourceDirectoryPath, 'passman');
+
 const newFilePath = path.resolve(__dirname, '../dist/passman');
 
 console.log('Starting to parse', mainFilePath);
@@ -14,7 +16,7 @@ const substitudeLines = mainFileLines.map(line => {
 
   if (matches) {
     const sourceFileName = matches[1];
-    const sourcePath = path.resolve(__dirname, '..', sourceFileName);
+    const sourcePath = path.resolve(sourceDirectoryPath, sourceFileName);
     const sourceContent = fs.readFileSync(sourcePath, 'utf8');
 
     const regexp = new RegExp(`${matches[0]}`);

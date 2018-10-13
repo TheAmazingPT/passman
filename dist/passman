@@ -1,12 +1,14 @@
 #!/usr/bin/env bash
 
-# This tools has a few dependencies:
+# Dependencies for general usage
 #   pass
+#   xclip
+#   notify-send (libnotify)
+
+# Additional dependencies for development
 #   node
 #   make
-#   xclip
-#   "shellcheck
-#   notify-send (libnotify)
+#   Shellcheck
 
 shopt -s nullglob globstar
 
