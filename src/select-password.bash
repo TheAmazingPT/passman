@@ -1,11 +1,18 @@
 function select_password {
-  local last_password password_list menu prompt new_password
+  local last_password password_list repeat_option menu prompt new_password
 
   last_password=$1
   password_list=$2
 
+  # Only show option for repeating something, if there is a $last_password
+  if [[ -n $last_password ]]; then
+    repeat_option="\"[Repeat: $last_password]\""
+  else
+    repeat_option=""
+  fi
+
   menu=(
-    "\"[Repeat: $last_password]\""
+    "$repeat_option"
     "\"Add Password\""
     "\"Generate Password\""
     "${password_list[@]}"
