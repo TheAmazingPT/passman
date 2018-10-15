@@ -2,7 +2,7 @@
 This is a simple dmenu frontend for [Pass: The Standard Unix Password Manager](https://www.passwordstore.org/)
 
 # Usage
-![Usage of Passman](https://drive.google.com/open?id=1Z8Z6eGy3mlg6x8So4e5CWmNIzOIj3j4c)
+![Usage of Passman](./docs/usage.gif)
 
 # Setup
 Grab the executable [bash script](https://github.com/TheAmazingPT/passman/raw/master/dist/passman)
