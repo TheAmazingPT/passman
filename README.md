@@ -2,7 +2,7 @@
 This is a simple dmenu frontend for [Pass: The Standard Unix Password Manager](https://www.passwordstore.org/)
 
 # Usage
-TBD
+![Usage of Passman](https://ibb.co/c1PV80)
 
 # Setup
 Grab the executable [bash script](https://github.com/TheAmazingPT/passman/raw/master/dist/passman)
